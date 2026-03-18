@@ -16,7 +16,7 @@ jobs:
             - name: Install Dependencies
               run: npm ci
             - name: Lint code
-              run: npm lint code
+              run: npm run lint
             - name: Run tests
               run: npm run test
             - name: Upload Artifacts
