@@ -1,52 +1,72 @@
 name: my-workflow
-on: 
-    push:
-        branches:
-            - main
-            - dev
-    pull_request:
-        types: [opened, closed]
-        branches: [main, dev]
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    types: [opened, closed]
+    branches: [main, dev]
 jobs:
-    test:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout the code
-              uses: actions/checkout@v4
-            - name: Install Dependencies
-              run: npm ci
-            - name: Lint code
-              run: npm run lint
-            - name: Run tests
-              run: npm run test
-            - name: Upload Artifacts
-              uses: actions/upload-artifact@v4
-              with:
-                name: test-report
-                path: test.json
-    build:
-        needs: test
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout the code
-              uses: actions/checkout@v4
-            - name: Install Dependencies
-              run: npm ci
-            - name: Build code
-              run: npm run build
-    deploy:
-        needs: build
-        runs-on: ubuntu-latest
-        steps:
-            - name: Deploy the code
-              run: echo "Deloying the code"
-    report:
-        needs: [test, deploy]
-        if: failure()
-        runs-on: ubuntu-latest
-        steps:
-            - name: Download Artifacts
-              uses: actions/download-artifact@v4
-              with:
-                name: test-report
-                path: test.json
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - name: Cache Dependencies
+        id: cache-step
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: npm-dep-${{hashFiles('package-lock.json')}}
+      - name: Install Dependencies
+        if: steps.cache-step.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Lint code
+        run: npm run lint
+      - name: Run tests
+        id: test-results
+        run: npm run test
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: test.json
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v4
+      - name: Cache Dependencies
+        id: cache-step
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: npm-dep-${{hashFiles('package-lock.json')}}
+      - name: Install Dependencies
+        if: steps.cache-step.outputs.cache-hit != 'true'
+        run: npm ci
+      - name: Build code
+        run: npm run build
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test-report
+          path: test.json
+      - name: Deploy the code
+        run: echo "Deloying the code"
+  report:
+    needs: [test, deploy]
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: test-report
+          path: test.json
