@@ -1,4 +1,4 @@
-name: blank-matrix-workflow
+name: matrix-workflow
 on:
   push:
     branches:
@@ -11,6 +11,12 @@ jobs:
       matrix:
         runners-os: [ubuntu-latest, windows-latest]
         node-versions: [16, 18]
+        include:
+          - runners-os: ubuntu-latest
+            node-versions: 20
+        exclude:
+          - runners-os: windows-latest
+            node-versions: 16
     runs-on: ${{matrix.runners-os}}
     steps:
       - name: Get code
