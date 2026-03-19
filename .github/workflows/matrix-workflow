@@ -1,0 +1,25 @@
+name: matrix-workflow
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+jobs:
+  build:
+    continue-on-error: true
+    strategy:
+      matrix:
+        runners-os: [ubuntu-latest, windows-latest]
+        node-versions: [16, 18]
+    runs-on: ${{matrix.runners-os}}
+    steps:
+      - name: Get code
+        uses: actions/checkout@v4
+      - name: Install NodeJs
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{matrix.node-versions}}
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build the code
+        run: npm run build
